@@ -9,15 +9,7 @@ import os
 import json
 import numpy as np
 import pandas as pd
-from shapely.geometry import Point
-import geopandas as gpd
-
-
-def df2gdf(df, xcol='x', ycol='y'):
-    """Make a GeoDataFrame from a DataFrame, assuming it contains points"""
-    geometry = [Point((s[xcol], s[ycol])) for i, s in df.iterrows()]
-    gdf = gpd.GeoDataFrame(df.copy(), geometry=geometry)
-    return gdf
+import pyproj
 
 
 # %% Define locations
@@ -29,16 +21,18 @@ df = pd.read_excel(fname)
 df = df.iloc[:np.where(df['NITG-filter'].isnull())[0][0]]
 df = df.set_index('NITG-filter')
 df = df[~df['X'].isna()]
-gdf = df2gdf(df, 'X', 'Y').set_crs(epsg=28992).to_crs(epsg=4326)
-gdf['put'] = [x.split('-')[0] for x in gdf.index]
+# get latitude and longitude of locations
+transformer = pyproj.Transformer.from_crs(28992, 4326)
+df['lat'], df['lon'] = transformer.transform(df['X'], df['Y'])
+# get the put-name of each location
+df['put'] = [x.split('-')[0] for x in df.index]
 locations = {}
-for put in gdf['put'].unique():
-    mask = gdf['put'] == put
-    g = gdf.loc[mask, 'geometry']
-    d0 = {'lat': g.y.mean(), 'lon': g.x.mean()}
+for put in df['put'].unique():
+    mask = df['put'] == put
+    d0 = {'lat': df.loc[mask, 'lat'].mean(), 'lon': df.loc[mask, 'lon'].mean()}
     d0['group'] = 'waterkwaliteit'
     d0['sublocations'] = {}
-    for i, name in enumerate(gdf.index[mask]):
+    for i, name in enumerate(df.index[mask]):
         d1 = {}
         d1['group'] = 'waterkwaliteit'
         props = {}
@@ -46,11 +40,11 @@ for put in gdf['put'].unique():
                   'BOVENKANT FILTER cm_NAP': 'Bovenkant filter (cm NAP)',
                   'ONDERKANT FILTER cm_NAP': 'Onderkant filter (cm NAP)'}
         for key in rename:
-            props[rename[key]] = gdf.at[name, key]
+            props[rename[key]] = df.at[name, key]
         for column in ['Perceel 1 Alg. stoffen en sporen',
                        'Perceel 2 Bestrijdings middelen',
                        'Perceel 3 en 4 Overige verontr.']:
-            if gdf.at[name, column] > 0:
+            if df.at[name, column] > 0:
                 value = 'Ja'
             else:
                 value = 'Nee'
