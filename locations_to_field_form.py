@@ -66,10 +66,10 @@ ifs['landgebruik'] = {'name': 'Dominant landgebruik',
                                   'Industrie']}
 
 # Gegevens Put
-ifs['beschadiging'] = {'name': 'Controle beschadiging put en filter',
+ifs['beschadiging'] = {'name': 'Beschadiging put en filter?',
                        'type': 'choice',
                        'options': ['Ja', 'Nee', 'Onbekend']}
-ifs['afdekking'] = {'name': 'Controle correcte afdekking put',
+ifs['afdekking'] = {'name': 'Correcte afdekking put?',
                     'type': 'choice',
                     'options': ['Ja', 'Nee', 'Onbekend']}
 
