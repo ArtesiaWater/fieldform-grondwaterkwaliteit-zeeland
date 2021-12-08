@@ -231,5 +231,6 @@ data = {'inputfields': ifs,
 
 if not os.path.isdir('output'):
     os.makedirs('output')
-with open(os.path.join('output', 'locations.json'), 'w') as outfile:
+fname = 'locations_{}.json'.format(pd.to_datetime('now').strftime('%Y%m%d'))
+with open(os.path.join('output', fname), 'w') as outfile:
     json.dump(data, outfile, indent=2)
