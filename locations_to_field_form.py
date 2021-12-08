@@ -7,19 +7,16 @@ Created on Fri Apr 23 08:45:34 2021
 
 import os
 import json
-import numpy as np
 import pandas as pd
 import pyproj
 
 
 # %% Define locations
 # read data
-fname = 'Kopie van GWMeetnetZld Bemonsteringsronde 2017 tbv offerte.xlsx'
+fname = 'GWMeetnetZld Bemonsteringsronde 2021 tbv json FieldForm.xlsx'
 fname = os.path.join('input', fname)
 df = pd.read_excel(fname)
-# only select top part of file
-df = df.iloc[:np.where(df['NITG-filter'].isnull())[0][0]]
-df = df.set_index('NITG-filter')
+df = df.set_index('NITGcode')
 df = df[~df['X'].isna()]
 # get latitude and longitude of locations
 transformer = pyproj.Transformer.from_crs(28992, 4326)
@@ -36,19 +33,30 @@ for put in df['put'].unique():
         d1 = {}
         d1['group'] = 'waterkwaliteit'
         props = {}
-        rename = {'MAAIVELD cm_NAP': 'Maaiveld (cm NAP)',
-                  'BOVENKANT FILTER cm_NAP': 'Bovenkant filter (cm NAP)',
-                  'ONDERKANT FILTER cm_NAP': 'Onderkant filter (cm NAP)'}
+        rename = {'Maaiveld [cm NAP]': 'Maaiveld [cm NAP]',
+                  'Bovenkant Filter [cm NAP]': 'Bovenkant Filter [cm NAP]',
+                  'Onderkant Filter [cm NAP]': 'Onderkant Filter [cm NAP]',
+                  'Lengte dichte buis [m]': 'Lengte dichte buis [m]'}
         for key in rename:
-            props[rename[key]] = df.at[name, key]
-        for column in ['Perceel 1 Alg. stoffen en sporen',
-                       'Perceel 2 Bestrijdings middelen',
-                       'Perceel 3 en 4 Overige verontr.']:
+            props[rename[key]] = float(df.at[name, key])
+        for column in ['Perceel  1',
+                       'Perceel 2',
+                       'Perceel 3',
+                       'Perceel 4',
+                       'Perceel 5']:
             if df.at[name, column] > 0:
                 value = 'Ja'
             else:
                 value = 'Nee'
             props[column] = value
+        if isinstance(df.at[name, 'KRW_GWL'], str):
+            props['KRW_GWL'] = df.at[name, 'KRW_GWL']
+        if df.at[name, 'KRW_Meetpunt']:
+            props['KRW_Meetpunt'] = 'Ja'
+        else:
+            props['KRW_Meetpunt'] = 'Nee'
+        if isinstance(df.at[name, 'Opmerking'], str):
+            props['Opmerking'] = df.at[name, 'Opmerking']
         d1['properties'] = props
         d0['sublocations'][name] = d1
     locations[put] = d0
